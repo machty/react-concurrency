@@ -1,7 +1,7 @@
 import { Task } from "../concurrency";
-
 import UnboundedPolicy from "../concurrency/external/scheduler/policies/unbounded-policy";
 import RestartablePolicy from "../concurrency/external/scheduler/policies/restartable-policy";
+import ReactScheduler from "./react-scheduler";
 
 class TaskBuilder {
   constructor(options) {
@@ -20,14 +20,10 @@ class TaskBuilder {
     let policyClass = this.options.policyClass || UnboundedPolicy;
     let schedulerPolicy = new policyClass(this.options.maxConcurrency);
 
-    const options = Object.assign({
-      scheduler: new EmberScheduler(schedulerPolicy, stateTrackingEnabled),
-    }, this.options);
-
     return new Task({
       perform: this.options.perform,
       instance,
-      schedulerPolicy,
+      scheduler: new ReactScheduler(schedulerPolicy, true),
     });
   }
 }
