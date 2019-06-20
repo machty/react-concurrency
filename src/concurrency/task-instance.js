@@ -1,12 +1,9 @@
 import { BaseTaskInstance } from './external/task-instance/base';
 
 export class TaskInstance extends BaseTaskInstance {
-  setState(props) {
-    // Object.assign(this, props);
-
-    // TODO: notify thing?
-    
-    // debugger;
+  setState(state) {
+    Object.assign(this, state);
+    this.task.instance.setState(state);
     // setProperties(this, props);
     // let state = this._recomputeState();
     // setProperties(this, {
@@ -38,7 +35,7 @@ export class TaskInstance extends BaseTaskInstance {
 
   getName() {
     if (!this.name) {
-      this.name = this.get("task._propertyName") || "<unknown>";
+      this.name = this.task.name || "<unknown>";
     }
     return this.name;
   }

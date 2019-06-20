@@ -12,10 +12,10 @@ class TaskyComponent extends Component {
     *perform(count) {
       while (count--) {
         this.setState({ count })
-        yield timeout(16);
+        yield timeout(20);
       }
     }
-  }).enqueued().bind(this);
+  }).drop().bind(this);
 
   render() {
     return (
