@@ -27,3 +27,5 @@ export class ReactEnvironment extends Environment {
     return false;
   }
 }
+
+export const REACT_ENVIRONMENT = new ReactEnvironment();

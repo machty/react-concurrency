@@ -25,14 +25,14 @@ class Scheduler {
 
   cancelAll(guid, cancelRequest) {
     this.taskInstances.forEach(taskInstance => {
-      if (taskInstance._tags[guid]) {
-        taskInstance._state.cancel(cancelRequest);
+      if (taskInstance.task.guids[guid]) {
+        taskInstance.cancel(cancelRequest);
       }
     });
   }
 
   perform(taskInstance) {
-    taskInstance._onFinalize(() => this.scheduleRefresh());
+    taskInstance.onFinalize(() => this.scheduleRefresh());
     this.taskInstances.push(taskInstance);
     this.refresh();
   }

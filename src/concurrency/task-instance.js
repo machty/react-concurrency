@@ -1,90 +1,73 @@
-import { ReactEnvironment } from './react-environment';
-import { INITIAL_STATE } from './external/task-instance/initial-state'
-import { yieldableSymbol } from './external/yieldables'
-import { TaskInstanceState, PERFORM_TYPE_DEFAULT } from './external/task-instance/state';
-import { CancelRequest, CANCEL_KIND_EXPLICIT } from './external/task-instance/cancel-request';
-import { ReactTaskInstanceDelegate } from './react-task-instance-delegate';
+import { BaseTaskInstance } from './external/task-instance/base';
 
-const EXPLICIT_CANCEL_REASON = ".cancel() was explicitly called";
-const REACT_ENVIRONMENT = new ReactEnvironment();
+export class TaskInstance extends BaseTaskInstance {
+  setState(props) {
+    // Object.assign(this, props);
 
-export class TaskInstance {
-  constructor({ generatorFactory, task, tags }) {
-    this.task = task;
-    this.tags = tags;
-    this._state = new TaskInstanceState({
-      generatorFactory,
-      delegate: new ReactTaskInstanceDelegate(this),
-      env: REACT_ENVIRONMENT,
-      performType: PERFORM_TYPE_DEFAULT,
-    });
+    // TODO: notify thing?
+    
+    // debugger;
+    // setProperties(this, props);
+    // let state = this._recomputeState();
+    // setProperties(this, {
+    //   isRunning: !this.isFinished,
+    //   isDropped: state === 'dropped',
+    //   state,
+    // });
   }
 
-  _start() {
-    this._state.start();
-    return this;
+  onStarted() {
+    this.triggerEvent("started", this);
   }
 
-  /**
-   * Cancels the task instance. Has no effect if the task instance has
-   * already been canceled or has already finished running.
-   *
-   * @method cancel
-   * @memberof TaskInstance
-   * @instance
-   */
-  cancel(cancelReason = EXPLICIT_CANCEL_REASON) {
-    this._state.cancel(new CancelRequest(CANCEL_KIND_EXPLICIT, cancelReason));
+  onSuccess() {
+    this.triggerEvent("succeeded", this);
   }
 
-  /**
-   * Returns a promise that resolves with the value returned
-   * from the task's (generator) function, or rejects with
-   * either the exception thrown from the task function, or
-   * an error with a `.name` property with value `"TaskCancelation"`.
-   *
-   * @method then
-   * @memberof TaskInstance
-   * @instance
-   * @return {Promise}
-   */
-  then(...args) {
-    return this._state.promise().then(...args);
+  onError(error) {
+    this.triggerEvent("errored", this, error);
   }
 
-  /**
-   * @method catch
-   * @memberof TaskInstance
-   * @instance
-   * @return {Promise}
-   */
-  catch(...args) {
-    return this._state.promise().catch(...args);
+  onCancel(cancelReason) {
+    this.triggerEvent("canceled", this, cancelReason);
   }
 
-  /**
-   * @method finally
-   * @memberof TaskInstance
-   * @instance
-   * @return {Promise}
-   */
-  finally(...args) {
-    return this._state.promise().finally(...args);
+  formatCancelReason(reason) {
+    return `TaskInstance '${this.getName()}' was canceled because ${reason}. For more information, see: http://ember-concurrency.com/docs/task-cancelation-help`;
   }
 
-  _onFinalize(callback) {
-    this._state.onFinalize(callback);
+  getName() {
+    if (!this.name) {
+      this.name = this.get("task._propertyName") || "<unknown>";
+    }
+    return this.name;
   }
 
-  // this is the "public" API for how yieldables resume TaskInstances;
-  // this should probably be cleanup / generalized, but until then,
-  // we can't change the name.
-  proceed(index, yieldResumeType, value) {
-    this._state.proceedChecked(index, yieldResumeType, value);
+  selfCancelLoopWarning(parent) {
+    let parentName = `\`${parent.getName()}\``;
+    let childName = `\`${this.getName()}\``;
+    // eslint-disable-next-line no-console
+    console.warn(
+      `ember-concurrency detected a potentially hazardous "self-cancel loop" between parent task ${parentName} and child task ${childName}. If you want child task ${childName} to be canceled when parent task ${parentName} is canceled, please change \`.perform()\` to \`.linked().perform()\`. If you want child task ${childName} to keep running after parent task ${parentName} is canceled, change it to \`.unlinked().perform()\``
+    );
   }
 
-  [yieldableSymbol](parentTaskInstance, resumeIndex) {
-    return this._state.onYielded(parentTaskInstance._state, resumeIndex);
+  triggerEvent(...allArgs) {
+    return;
+
+    if (!this.eventsEnabled) {
+      return;
+    }
+
+    let taskInstance = this;
+    let task = taskInstance.task;
+    let host = task.context;
+    let eventNamespace = task && task._propertyName;
+
+    if (host && host.trigger && eventNamespace) {
+      let [eventType, ...args] = allArgs;
+      host.trigger(`${eventNamespace}:${eventType}`, ...args);
+    }
   }
 }
 

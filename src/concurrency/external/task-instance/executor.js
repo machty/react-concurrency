@@ -18,8 +18,9 @@ import {
   CancelRequest,
   CANCEL_KIND_YIELDABLE_CANCEL,
   CANCEL_KIND_LIFESPAN_END,
-  CANCEL_KIND_PARENT_CANCEL
-} from "./cancel-request";
+  CANCEL_KIND_PARENT_CANCEL,
+  didCancel
+} from "./cancelation";
 
 export const PERFORM_TYPE_DEFAULT = "PERFORM_TYPE_DEFAULT";
 export const PERFORM_TYPE_UNLINKED = "PERFORM_TYPE_UNLINKED";
@@ -33,40 +34,14 @@ export function getRunningInstance() {
   return TASK_INSTANCE_STACK[TASK_INSTANCE_STACK.length - 1];
 }
 
-/**
- * Returns true if the object passed to it is a TaskCancelation error.
- * If you call `someTask.perform().catch(...)` or otherwise treat
- * a {@linkcode TaskInstance} like a promise, you may need to
- * handle the cancelation of a TaskInstance differently from
- * other kinds of errors it might throw, and you can use this
- * convenience function to distinguish cancelation from errors.
- *
- * ```js
- * click() {
- *   this.get('myTask').perform().catch(e => {
- *     if (!didCancel(e)) { throw e; }
- *   });
- * }
- * ```
- *
- * @param {Object} error the caught error, which might be a TaskCancelation
- * @returns {Boolean}
- */
-export function didCancel(e) {
-  return e && e.name === TASK_CANCELATION_NAME;
-}
-
-export class TaskInstanceState {
-  constructor({ generatorFactory, delegate, env, debug, performType }) {
+export class TaskInstanceExecutor {
+  constructor({ generatorFactory, env }) {
     this.generatorState = new GeneratorState(generatorFactory);
-    this.delegate = delegate;
     this.state = Object.assign({}, INITIAL_STATE);
     this.index = 1;
     this.disposers = [];
     this.finalizeCallbacks = [];
     this.env = env;
-    this.performType = performType;
-    this.debug = debug;
     this.cancelRequest = null;
   }
 
@@ -76,7 +51,7 @@ export class TaskInstanceState {
     }
     this.setState({ hasStarted: true });
     this.proceedSync(YIELDABLE_CONTINUE, undefined);
-    this.delegate.onStarted();
+    this.taskInstance.onStarted();
   }
 
   cancel(cancelRequest) {
@@ -93,7 +68,7 @@ export class TaskInstanceState {
 
   setState(state) {
     Object.assign(this.state, state);
-    this.delegate.setState(state);
+    this.taskInstance.setState(state);
   }
 
   proceedChecked(index, yieldResumeType, value) {
@@ -313,7 +288,7 @@ export class TaskInstanceState {
     // TODO: fix this!
     if (this._expectsLinkedYield) {
       let value = stepResult.value;
-      if (!value || value._performType !== PERFORM_TYPE_LINKED) {
+      if (!value || value.performType !== PERFORM_TYPE_LINKED) {
         // eslint-disable-next-line no-console
         console.warn(
           "You performed a .linked() task without immediately yielding/returning it. This is currently unsupported (but might be supported in future version of ember-concurrency)."
@@ -404,12 +379,12 @@ export class TaskInstanceState {
   }
 
   finalizeWithCancel() {
-    let cancelReason = this.delegate.formatCancelReason(
+    let cancelReason = this.taskInstance.formatCancelReason(
       this.cancelRequest.reason
     );
     let error = new Error(cancelReason);
 
-    if (this.debug || this.env.globalDebuggingEnabled()) {
+    if (this.debugEnabled()) {
       // eslint-disable-next-line no-console
       console.log(cancelReason);
     }
@@ -424,6 +399,10 @@ export class TaskInstanceState {
     });
   }
 
+  debugEnabled() {
+    return this.taskInstance.debug || this.env.globalDebuggingEnabled();
+  }
+
   finalizeShared(state) {
     this.index++;
     state.isFinished = true;
@@ -435,22 +414,21 @@ export class TaskInstanceState {
   dispatchFinalizeEvents(completionState) {
     switch (completionState) {
       case COMPLETION_SUCCESS:
-        this.delegate.onSuccess();
+        this.taskInstance.onSuccess();
         break;
       case COMPLETION_ERROR:
-        this.delegate.onError(this.state.error);
+        this.taskInstance.onError(this.state.error);
         break;
       case COMPLETION_CANCEL:
-        this.delegate.onCancel(this.state.cancelReason);
+        this.taskInstance.onCancel(this.state.cancelReason);
         break;
     }
   }
 
   invokeYieldable(yieldedValue) {
     try {
-      let yieldContext = this.delegate.getYieldContext();
       let maybeDisposer = yieldedValue[yieldableSymbol](
-        yieldContext,
+        this.taskInstance,
         this.index
       );
       this.addDisposer(maybeDisposer);
@@ -497,18 +475,23 @@ export class TaskInstanceState {
       }
     });
 
-    if (this.performType === PERFORM_TYPE_UNLINKED) {
+    let performType = this.getPerformType();
+    if (performType === PERFORM_TYPE_UNLINKED) {
       return;
     }
 
     return () => {
-      this.detectSelfCancelLoop(parent);
+      this.detectSelfCancelLoop(performType, parent);
       this.cancel(new CancelRequest(CANCEL_KIND_PARENT_CANCEL));
     };
   }
 
-  detectSelfCancelLoop(parent) {
-    if (this.performType !== PERFORM_TYPE_DEFAULT) {
+  getPerformType() {
+    return this.taskInstance.performType || PERFORM_TYPE_DEFAULT;
+  }
+
+  detectSelfCancelLoop(performType, parent) {
+    if (performType !== PERFORM_TYPE_DEFAULT) {
       return;
     }
 
@@ -520,7 +503,8 @@ export class TaskInstanceState {
       !this.cancelRequest &&
       !this.state.isFinished
     ) {
-      this.delegate.selfCancelLoopWarning(parent.delegate);
+      // TODO:
+      // this.taskInstance.selfCancelLoopWarning(parent.delegate);
     }
   }
 }

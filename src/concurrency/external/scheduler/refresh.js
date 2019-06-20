@@ -17,7 +17,7 @@ class Refresh {
     });
 
     this.stateTracker.computeFinalStates(state => this.applyState(state));
-    this.startingInstances.forEach(taskInstance => taskInstance._start());
+    this.startingInstances.forEach(taskInstance => taskInstance.start());
 
     return finalTaskInstances;
   }
@@ -26,13 +26,14 @@ class Refresh {
     let numRunning = 0, numQueued = 0;
     let taskInstances = this.initialTaskInstances.filter(taskInstance => {
       let taskState = this.stateTracker.stateFor(taskInstance.task);
+      let executorState = taskInstance.executor.state;
 
-      if (taskInstance.isFinished) {
+      if (executorState.isFinished) {
         taskState.onCompletion(taskInstance);
         return false;
       }
 
-      if (taskInstance.hasStarted) {
+      if (executorState.hasStarted) {
         numRunning += 1;
       } else {
         numQueued += 1;
@@ -46,8 +47,8 @@ class Refresh {
   setTaskInstanceExecutionState(taskInstance, desiredState) {
     let taskState = this.stateTracker.stateFor(taskInstance.task);
 
-    if (!taskInstance._counted) {
-      taskInstance._counted = true;
+    if (!taskInstance.executor.counted) {
+      taskInstance.executor.counted = true;
       taskState.onPerformed(taskInstance);
     }
 
@@ -72,9 +73,9 @@ class Refresh {
   }
 
   applyState(state) {
-    let { taskOrGroup } = state;
+    let { taskable } = state;
 
-    if (!taskOrGroup._onStateCallback) {
+    if (!taskable.onState) {
       return;
     }
 
@@ -84,7 +85,7 @@ class Refresh {
       numPerformedInc: state.numPerformedInc,
     }, state.attrs);
 
-    taskOrGroup._onStateCallback(taskOrGroup, props);
+    taskable.onState(props, taskable);
   }
 }
 
