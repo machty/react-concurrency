@@ -1,5 +1,12 @@
 import { Task } from "./concurrency/task";
-import { task } from "./concurrency/task-builder";
+import {
+  task,
+  restartable,
+  enqueued,
+  drop,
+  keepLatest,
+  unbounded,
+} from "./concurrency/task-builder";
 import { yieldableSymbol, YIELDABLE_CONTINUE } from "./concurrency/external/yieldables";
 
 export function timeout(ms) {
@@ -19,4 +26,9 @@ export function timeout(ms) {
 export {
   Task,
   task,
+  restartable,
+  enqueued,
+  drop,
+  keepLatest,
+  unbounded,
 };

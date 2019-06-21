@@ -14,7 +14,7 @@ class App extends Component {
     return (
       <div className="App">
         <button onClick={this.toggleComponent}>
-          {this.state.isShowing ? "Hide" : "Show"}
+          {this.state.isShowing ? "Hide (test that task cancels on unrender)" : "Show"}
         </button>
         {
           this.state.isShowing ? <TaskyComponent /> : null

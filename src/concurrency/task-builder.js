@@ -1,9 +1,9 @@
 import { Task } from "../concurrency";
-import UnboundedPolicy from "./external/scheduler/policies/unbounded-policy";
-import RestartablePolicy from "./external/scheduler/policies/restartable-policy";
-import EnqueuedPolicy from "./external/scheduler/policies/enqueued-policy";
-import DropPolicy from "./external/scheduler/policies/drop-policy";
-import KeepLatestPolicy from "./external/scheduler/policies/keep-latest-policy";
+import unbounded from "./external/scheduler/policies/unbounded-policy";
+import restartable from "./external/scheduler/policies/restartable-policy";
+import enqueued from "./external/scheduler/policies/enqueued-policy";
+import drop from "./external/scheduler/policies/drop-policy";
+import keepLatest from "./external/scheduler/policies/keep-latest-policy";
 import ReactScheduler from "./react-scheduler";
 
 class TaskBuilder {
@@ -12,19 +12,27 @@ class TaskBuilder {
   }
 
   restartable() {
-    return this._clone({ policy: RestartablePolicy });
+    return this._clone({ policy: restartable });
   }
 
   enqueued() {
-    return this._clone({ policy: EnqueuedPolicy });
+    return this._clone({ policy: enqueued });
   }
 
   drop() {
-    return this._clone({ policy: DropPolicy });
+    return this._clone({ policy: drop });
   }
 
   keepLatest() {
-    return this._clone({ policy: KeepLatestPolicy });
+    return this._clone({ policy: keepLatest });
+  }
+
+  unbounded() {
+    return this._clone({ policy: unbounded });
+  }
+
+  maxConcurrency(maxConcurrency) {
+    return this._clone({ maxConcurrency });
   }
 
   onState(onState) {
@@ -46,7 +54,7 @@ class TaskBuilder {
   }
 
   bind(instance) {
-    let Policy = this.options.policy || UnboundedPolicy;
+    let Policy = this.options.policy || drop;
     let schedulerPolicy = new Policy(this.options.maxConcurrency);
     let taskFn = this.options.perform;
     let onState = this.options.trackState ?
@@ -90,6 +98,18 @@ function updateTaskAndReRender(state, task) {
   task.context.setState({});
 }
 
-export function task(options) {
-  return new TaskBuilder(options);
+export function task(...args) {
+  if (args.length === 2) {
+    return new TaskBuilder(args[1]).bind(args[0]);
+  } else {
+    return new TaskBuilder(args[0]);
+  }
 }
+
+export {
+  restartable,
+  enqueued,
+  drop,
+  keepLatest,
+  unbounded,
+};
