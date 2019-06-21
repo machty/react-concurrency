@@ -8,14 +8,15 @@ import { cleanupOnDestroy } from './external/lifespan';
 export class Task extends BaseTask {
   constructor(options) {
     super(options);
-    cleanupOnDestroy(this.context, this, 'willDestroy', 'onHostTeardown', {
+    cleanupOnDestroy(this.context, this, 'componentWillUnmount', 'onHostTeardown', {
       reason: 'the object it lives on was destroyed or unrendered',
       cancelRequestKind: CANCEL_KIND_LIFESPAN_END,
     });
   }
 
   onHostTeardown() {
-    this.__rcIsDestroying = true;
+    this.isDestroying = true;
+    this.context.__rcIsUnmounting__ = true;
     this.cancelAll();
   }
 
@@ -31,7 +32,7 @@ export class Task extends BaseTask {
       hasEnabledEvents: false,
     });
 
-    if (this.__rcIsDestroying) {
+    if (this.isDestroying || this.context.__rcIsUnmounting__) {
       taskInstance.cancel();
     }
 

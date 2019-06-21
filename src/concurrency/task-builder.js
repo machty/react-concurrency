@@ -28,6 +28,17 @@ class TaskBuilder {
   }
 
   onState(onState) {
+    return this._clone({
+      onState: (state, task) => {
+        if (task.context.__rcIsUnmounting__) {
+          return;
+        }
+        onState(state, task);
+      }
+    });
+  }
+
+  onStateRaw(onState) {
     return this._clone({ onState });
   }
 
