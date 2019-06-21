@@ -1,5 +1,6 @@
 import React from 'react';
-import { task, timeout, useTracked, useTask } from './concurrency';
+import { timeout, useTracked, useTask } from './concurrency';
+import TaskyChildComponent from './TaskyChildComponent';
 
 export default function HookTaskyComponent() {
   const state = useTracked({
@@ -14,7 +15,7 @@ export default function HookTaskyComponent() {
       state.count = 0;
       while(state.count < n) {
         state.count++;
-        yield timeout(100);
+        yield timeout(10);
       }
       state.name = reverse(state.name);
     }
@@ -27,6 +28,8 @@ export default function HookTaskyComponent() {
       <button onClick={() => countTask.perform(50)}>
         Perform ({ countTask.isRunning ? "running" : "idle" })
       </button>
+
+      <TaskyChildComponent task={countTask} />
     </div>
   );
 }

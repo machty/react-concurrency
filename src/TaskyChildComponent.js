@@ -5,10 +5,7 @@ class TaskyChildComponent extends Component {
   render() {
     return (
       <div>
-        <p>
-          I am a child component that is passed a task.
-        </p>
-
+        <h4>Child Component</h4>
         <p>
           <button onClick={() => this.props.task.perform(100)}>
             {this.props.task.isRunning ? "Performing..." : "Perform from Child"}
