@@ -1,4 +1,4 @@
-import { Task } from "../concurrency";
+import { Task } from "../concurrency/task";
 import unbounded from "./external/scheduler/policies/unbounded-policy";
 import restartable from "./external/scheduler/policies/restartable-policy";
 import enqueued from "./external/scheduler/policies/enqueued-policy";
