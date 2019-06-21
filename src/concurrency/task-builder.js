@@ -4,7 +4,7 @@ import restartable from "./external/scheduler/policies/restartable-policy";
 import enqueued from "./external/scheduler/policies/enqueued-policy";
 import drop from "./external/scheduler/policies/drop-policy";
 import keepLatest from "./external/scheduler/policies/keep-latest-policy";
-import ReactScheduler from "./react-scheduler";
+import ReactScheduler from "./scheduler";
 
 class TaskBuilder {
   constructor(options) {

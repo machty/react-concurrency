@@ -27,7 +27,6 @@ class TaskyComponent extends Component {
         return Math.floor(Math.random() * 100);
       }
     }),
-
   };
 
   render() {

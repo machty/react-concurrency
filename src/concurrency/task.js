@@ -1,7 +1,7 @@
 import { Task as BaseTask } from './external/task/task';
 import { TaskInstance } from "./task-instance";
 import { TaskInstanceExecutor } from "./external/task-instance/executor";
-import { REACT_ENVIRONMENT } from './react-environment';
+import { REACT_ENVIRONMENT } from './environment';
 import { CANCEL_KIND_LIFESPAN_END } from './external/task-instance/cancelation';
 import { cleanupOnDestroy } from './external/lifespan';
 
