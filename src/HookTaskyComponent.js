@@ -1,5 +1,5 @@
 import React from 'react';
-import { timeout, useTracked, useTask } from './concurrency';
+import { timeout, useTracked, useTask, publish } from './concurrency';
 import TaskyChildComponent from './TaskyChildComponent';
 
 export default function HookTaskyComponent() {
@@ -27,6 +27,10 @@ export default function HookTaskyComponent() {
       <p>You clicked {state.count} times</p>
       <button onClick={() => countTask.perform(50)}>
         Perform ({ countTask.isRunning ? "running" : "idle" })
+      </button>
+      <br />
+      <button onClick={() => countTask.cancelAll()}>
+        myTask.cancelAll()
       </button>
 
       <TaskyChildComponent task={countTask} />
