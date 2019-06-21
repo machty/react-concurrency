@@ -42,6 +42,14 @@ class TaskBuilder {
     return this._clone({ onState });
   }
 
+  trackState() {
+    return this.onState((state, task) => {
+      // Update properties on the task and trigger re-render
+      Object.assign(task, state);
+      task.context.setState({});
+    });
+  }
+
   _clone(options) {
     return new TaskBuilder(Object.assign({}, this.options, options));
   }
@@ -60,6 +68,18 @@ class TaskBuilder {
       onState: this.options.onState,
     });
   }
+
+  get perform() {
+    forgotBindError();
+  }
+
+  get isRunning() {
+    forgotBindError();
+  }
+}
+
+function forgotBindError() {
+  throw new Error(`It looks like you trying to use a task, but you haven't called .bind(this) on it.`);
 }
 
 export function task(options) {

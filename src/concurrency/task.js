@@ -39,4 +39,20 @@ export class Task extends BaseTask {
     this.scheduler.perform(taskInstance);
     return taskInstance;
   }
+
+  get isRunning() {
+    assertTrackingState(this, 'isRunning');
+    return this.numRunning > 0;
+  }
+
+  get isIdle() {
+    assertTrackingState(this, 'isIdle');
+    return this.numRunning == 0;
+  }
+}
+
+function assertTrackingState(task, key) {
+  if (!task.onState) {
+    throw new Error(`You tried to access a task's ${key} property, but you haven't enabled state tracking on this task. Please use '.trackState()' to enable state tracking on this task.`);
+  }
 }
