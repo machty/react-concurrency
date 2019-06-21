@@ -2,8 +2,19 @@ import React, { Component } from "react";
 import "./App.css";
 import { task, timeout } from "./concurrency";
 
+function forwardTo(name) {
+  return (state, task) => {
+    let component = task.context;
+    component.setState({
+      [name]: state
+    });
+  };
+}
+
 class TaskyComponent extends Component {
-  state = { isLoading: false };
+  state = {
+
+  };
 
   myTask = task({
     *perform(count) {
@@ -14,14 +25,14 @@ class TaskyComponent extends Component {
     }
   })
     .drop()
-    .onState((a, b) => { b.context.setState({ isLoading: a.isRunning })})
+    .onState(forwardTo('myTaskState'))
     .bind(this);
 
   render() {
     return (
       <div>
         <p>
-          isLoading: {this.state.isLoading}
+          {this.state.myTaskState.isLoading ? "Loading" : "Idle"}
         </p>
         <p>
           Count is {this.state.count} and foo={this.state.foo}
