@@ -3,7 +3,7 @@ import { BaseTaskInstance } from './external/task-instance/base';
 export class TaskInstance extends BaseTaskInstance {
   setState(state) {
     Object.assign(this, state);
-    this.task.instance.setState(state);
+    // this.task.instance.setState(state);
     // setProperties(this, props);
     // let state = this._recomputeState();
     // setProperties(this, {

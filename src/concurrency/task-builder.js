@@ -27,6 +27,10 @@ class TaskBuilder {
     return this._clone({ policyClass: KeepLatestPolicy });
   }
 
+  onState(onState) {
+    return this._clone({ onState });
+  }
+
   _clone(options) {
     return new TaskBuilder(Object.assign({}, this.options, options));
   }
@@ -34,11 +38,15 @@ class TaskBuilder {
   bind(instance) {
     let policyClass = this.options.policyClass || UnboundedPolicy;
     let schedulerPolicy = new policyClass(this.options.maxConcurrency);
+    let taskFn = this.options.perform;
 
     return new Task({
-      perform: this.options.perform,
-      instance,
+      generatorFactory: (args) => () => taskFn.apply(instance, args),
+      context: instance,
+      group: null,
       scheduler: new ReactScheduler(schedulerPolicy, true),
+      hasEnabledEvents: false,
+      onState: this.options.onState,
     });
   }
 }
