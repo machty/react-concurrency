@@ -17,10 +17,15 @@ class App extends Component {
           {this.state.isShowing ? "Hide (test that task cancels on unrender)" : "Show"}
         </button>
         {
-          this.state.isShowing ? <TaskyComponent /> : null
-        }
+          this.state.isShowing &&
+            <div>
+              <h2>Tasks on class-based components</h2>
+              <TaskyComponent />
 
-        <HookTaskyComponent />
+              <h2>Tasks via useTask hook</h2>
+              <HookTaskyComponent />
+            </div>
+        }
       </div>
     );
   }
