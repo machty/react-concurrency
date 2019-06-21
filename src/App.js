@@ -19,6 +19,8 @@ class App extends Component {
         {
           this.state.isShowing ? <TaskyComponent /> : null
         }
+
+        <HookTaskyComponent />
       </div>
     );
   }

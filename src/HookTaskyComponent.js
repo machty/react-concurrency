@@ -1,29 +1,34 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 import useTask, { timeout } from './use-task';;
+import { useTracked } from './concurrency';
 
 export default function HookTaskyComponent() {
-  // Declare a new state variable, which we'll call "count"
-  const [count, setCount] = useState(0);
+  const state = useTracked({
+    count: 0,
+    name: "Alex",
+  });
 
-  const [perform, state] = useTask(function * (n) {
-    let i = 0;
-    while (true) {
-      yield timeout(100);
-      ++i;
-      setCount(i)
+  const [perform, taskState] = useTask(function * (n) {
+    state.count = 0;
+    while(state.count < n) {
+      state.count++;
+      yield timeout(10);
     }
+    state.name = reverse(state.name);
   })
 
   return (
     <div>
-      <p>You clicked {count} times</p>
-      <button onClick={() => setCount(count + 1)}>
-        Count++
-      </button>
-      <button onClick={() => perform(5)}>
-        Perform ({ state.isRunning ? "running" : "idle" })
+      <p>Hello {state.name}</p>
+      <p>You clicked {state.count} times</p>
+      <button onClick={() => perform(50)}>
+        Perform ({ taskState.isRunning ? "running" : "idle" })
       </button>
     </div>
   );
+}
+
+function reverse(str) {
+  return str.split('').reverse().join('');
 }
