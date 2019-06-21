@@ -38,6 +38,14 @@ export function useTracked(initialValues) {
 function createTrackedObject(original, rerender) {
   let obj = Object.create(original);
   Object.keys(original).forEach(k => installTrackedProperty(obj, k, rerender));
+
+  obj.for = (key) => {
+    return [
+      obj[key],
+      (newValue) => { obj[key] = newValue; }
+    ];
+  }
+
   return obj;
 }
 
