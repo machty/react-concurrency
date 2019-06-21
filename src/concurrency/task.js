@@ -53,6 +53,6 @@ export class Task extends BaseTask {
 
 function assertTrackingState(task, key) {
   if (!task.onState) {
-    throw new Error(`You tried to access a task's ${key} property, but you haven't enabled state tracking on this task. Please use '.trackState()' to enable state tracking on this task.`);
+    throw new Error(`You tried to access a task's ${key} property, but you haven't enabled state tracking on this task. Please use 'trackState: true' or '.trackState()' to enable state tracking on this task.`);
   }
 }

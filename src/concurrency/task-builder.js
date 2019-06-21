@@ -12,29 +12,24 @@ class TaskBuilder {
   }
 
   restartable() {
-    return this._clone({ policyClass: RestartablePolicy });
+    return this._clone({ policy: RestartablePolicy });
   }
 
   enqueued() {
-    return this._clone({ policyClass: EnqueuedPolicy });
+    return this._clone({ policy: EnqueuedPolicy });
   }
 
   drop() {
-    return this._clone({ policyClass: DropPolicy });
+    return this._clone({ policy: DropPolicy });
   }
 
   keepLatest() {
-    return this._clone({ policyClass: KeepLatestPolicy });
+    return this._clone({ policy: KeepLatestPolicy });
   }
 
   onState(onState) {
     return this._clone({
-      onState: (state, task) => {
-        if (task.context.__rcIsUnmounting__) {
-          return;
-        }
-        onState(state, task);
-      }
+      onState: whenMounted(onState)
     });
   }
 
@@ -43,11 +38,7 @@ class TaskBuilder {
   }
 
   trackState() {
-    return this.onState((state, task) => {
-      // Update properties on the task and trigger re-render
-      Object.assign(task, state);
-      task.context.setState({});
-    });
+    return this._clone({ trackState: true });
   }
 
   _clone(options) {
@@ -55,9 +46,12 @@ class TaskBuilder {
   }
 
   bind(instance) {
-    let policyClass = this.options.policyClass || UnboundedPolicy;
-    let schedulerPolicy = new policyClass(this.options.maxConcurrency);
+    let Policy = this.options.policy || UnboundedPolicy;
+    let schedulerPolicy = new Policy(this.options.maxConcurrency);
     let taskFn = this.options.perform;
+    let onState = this.options.trackState ?
+      whenMounted(updateTaskAndReRender) :
+      this.options.onState;
 
     return new Task({
       generatorFactory: (args) => () => taskFn.apply(instance, args),
@@ -65,7 +59,7 @@ class TaskBuilder {
       group: null,
       scheduler: new ReactScheduler(schedulerPolicy, true),
       hasEnabledEvents: false,
-      onState: this.options.onState,
+      onState,
     });
   }
 
@@ -78,8 +72,22 @@ class TaskBuilder {
   }
 }
 
+function whenMounted(callback) {
+  return (state, task) => {
+    if (task.context.__rcIsUnmounting__) {
+      return;
+    }
+    callback(state, task);
+  };
+}
+
 function forgotBindError() {
   throw new Error(`It looks like you trying to use a task, but you haven't called .bind(this) on it.`);
+}
+
+function updateTaskAndReRender(state, task) {
+  Object.assign(task, state);
+  task.context.setState({});
 }
 
 export function task(options) {

@@ -5,14 +5,15 @@ import { task, timeout } from "./concurrency";
 class TaskyComponent extends Component {
   state = {
     myTask: task({
+      trackState: true,
+
       *perform(count) {
         while (count--) {
           this.setState({ count });
           yield timeout(20);
         }
-      }
+      },
     })
-      .trackState()
       .drop()
       .bind(this)
   };
